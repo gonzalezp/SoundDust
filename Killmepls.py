@@ -9,8 +9,10 @@ fig = plt.figure()
 ax = plt.axes(xlim=(0, 2*np.pi), ylim=(-5,5))
 line, = ax.plot([], [], lw=2)
 
+### JJF Comment: Your energy eigenfunctions do not depend on the radius, r
 def PR_Func(theta,n,r):
         ci = 0.+1j
+        ### JJF Comment: prefactor is just 1/sqrt(2*pi)
         pr = 1./(np.sqrt(2*np.pi*r))
         pz = np.exp(ci*n*theta)
         psi = pr*pz
@@ -23,13 +25,14 @@ def Gauss_Packet(sig, x, x0, k0):
         gx = np.exp(-0.5*((x-x0)/sig)**2)
         pw = np.exp(ci*k0*x)
         return pre*gx*pw
-
+### JJF Comment: again, radius r is not needed as a parameter to the FourierAnalysis function
 def FourierAnalysis(x, PsiX, n, r):
     cn = np.zeros(len(n),dtype=complex)
     dx = x[1]-x[0]
     for i in range (0,len(n)):
 
         som = 0+0j
+        ### JJF Comment: radius r not needed as a parameter to PR_Func
         psi_i = PR_Func(x, n[i], r)
 
         for j in range (0, len(x)):
@@ -38,11 +41,16 @@ def FourierAnalysis(x, PsiX, n, r):
         cn[i] = som
 
     return cn
+
+### JJF Comment: Energy also needs the reduced mass
 def PR_En(n,r):
+        
+    ### JJF Comment: be careful of order of operations, as you have written it, En = (n^2 * r^2)/2
     En=(n**2/2*r**2)
     return En
 
 def PR_Time(n, r, t):
+    ### JJF Comment: dont forget, Energy also needs reduced mass
     E = PR_En(n, r)
     ci = 0.+1j
     phi_n_t = np.exp(-1*ci*E*t)
@@ -73,6 +81,7 @@ NewWvfxn = Pos_Eignfn(sig, xs, x0)
 plt.plot(x, np.real(y), 'green', x, np.real(P), 'orange')
 plt.show()
 '''
+### JJF Comment: Maximum angle should be 2*pi
 rr = 3*np.pi/2.
 
 ### If you initialize in state n with energy En, then
@@ -83,11 +92,15 @@ rr = 3*np.pi/2.
 ### 1. n -> quantum number of initial state (for time<30)
 ### 2. cn -> array of expansion coefficients for position eigenfunction (for 30<t<60)
 ### 3. m  -> quantum number of final state (for time>60)
+
 k0=0
+### JJF Comment:  xt should go between 0 and 2*pi
 xt = np.linspace(0,rr,500)
 nx = np.linspace(1,10,10)
+### JJF Comment: no rr parameter needed for PR_Func
 y = PR_Func(xt,6,rr)
 P = np.real(np.conj(y)*y)
+### JJF Comment: No rr parameter needed for FourierAnalysis
 cn = FourierAnalysis(xt, y, nx, rr)
 print(cn)
 
@@ -99,6 +112,7 @@ draw=choice(list_of_candidates,15,p=pr)
 print("Measurement of position yielded x0 = ",draw[0])
 
 PosEigenfxn = Gauss_Packet(0.5, xt, draw[1], k0)
+### JJF Comment: No rr parameter needed for FourierAnalysis
 cn2 = FourierAnalysis(xt, PosEigenfxn, nx, rr)
 
 #energy=PIB_En(n, L)
@@ -110,7 +124,10 @@ cn2 = FourierAnalysis(xt, PosEigenfxn, nx, rr)
 psi_exp = np.zeros_like(y)
 
 for i in range (0,len(cn)):
-    psi_exp = psi_exp + cn[i]*PR_Func(xt, nx[i]*PR_Time(nx[i],rr,30), rr)
+    ### JJF Comment: You have mixed the function calls together in a peculiar way,
+    ### I have fixed this using the old definition of PR_Func, which still wrongly takes
+    ### rr as a parameter... you will need to modify it once more after you fix PR_Func
+    psi_exp = psi_exp + cn[i]*PR_Func(xt, nx[i], rr)*PR_Time(nx[i],rr,30)
 
 def init():
     line.set_data([], [])
@@ -133,6 +150,7 @@ def animate(i):
         psi_t = np.zeros(len(x),dtype=complex)
 
         if i<30:
+                ### JJF Comment: No rr parameter needed for PR_Func
                 psi = PR_Func(xt,6,rr)
                 ft = PR_Time(6, rr, i)
                 psi_t = psi*ft
@@ -150,7 +168,11 @@ def animate(i):
 #        print(i)
 
                         for g in range(0,len(cn2)):
+                                ### JJF Comment: No rr parameter needed for PR_Func
                                 ps = PR_Func(xt,nx[g],rr)
+                                ### JJF Comment: You might want to slow your animation down by 
+                                ### passing something like (i-30)/100 to PR_Time
+                                ### because the position eigenfunction moves very quickly!
                                 ft = PR_Time(nx[g],rr,i-30)
                                 psi_t = psi_t + cn2[g]*ft*ps
 #        psi_t= PIB_Func(x,10,L)*PIB_Time(10, L, i*100)
@@ -158,6 +180,7 @@ def animate(i):
                 else:
 
                         if i<10000:
+                                ### JJF Comment: No rr parameter needed for PR_Func
                                 psi = PR_Func(xt, 20,rr)
                                 ft = PR_Time(20, rr, i)
                                 psi_t = psi*ft
